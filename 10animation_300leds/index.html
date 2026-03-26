@@ -106,12 +106,12 @@ button:hover{background:#1d4ed8}
 
 <script>
 // ================= MQTT CONFIG =================
-const broker = "wss://e840d26e0bde4fb5a156ed3b3a492c17.s1.eu.hivemq.cloud:8884/mqtt";
-const topic  = "rudra/esp32/led";
+const broker = ""; // create your own broker
+const topic  = ""; // create your own topic
 
 const client = mqtt.connect(broker,{
-  username:"esp32user",
-  password:"Rudradeb@2004"
+  username:"your_user_name",
+  password:"your_password"
 });
 
 let lastColor = "#ff0000";
