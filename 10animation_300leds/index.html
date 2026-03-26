@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ESP32 LED Controller</title>
+
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+
+<style>
+body{
+  font-family:Arial;
+  text-align:center;
+  background:#020617;
+  color:#e5e7eb;
+}
+section{
+  border:1px solid #334155;
+  padding:20px;
+  margin:20px;
+  border-radius:12px;
+  background:#0f172a;
+}
+.color-wheel{
+  width:120px;
+  height:120px;
+  border-radius:50%;
+  border:none;
+  cursor:pointer;
+}
+.color-btn{
+  width:36px;
+  height:36px;
+  border-radius:50%;
+  border:none;
+  margin:5px;
+  cursor:pointer;
+}
+button{
+  padding:12px 18px;
+  margin:6px;
+  font-size:14px;
+  border-radius:6px;
+  border:none;
+  cursor:pointer;
+  background:#2563eb;
+  color:white;
+}
+button:hover{background:#1d4ed8}
+#status{color:#22c55e;margin-bottom:10px}
+.anim-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+  gap:6px;
+}
+
+</style>
+</head>
+
+<body>
+
+<h2>ESP32 WS2812B LED Control</h2>
+<p id="status">Connecting...</p>
+
+<!-- ================= COLOR SECTION ================= -->
+<section>
+  <h3>🎨 Color Picker</h3>
+
+  <input type="color" class="color-wheel" id="colorPicker"
+         onchange="sendColor(this.value)">
+
+  <br><br>
+  <button onclick="randomColor()">🎲 Random Color</button>
+
+  <br><br>
+  <div>
+    <button class="color-btn" style="background:#ff0000" onclick="sendColor('#ff0000')"></button>
+    <button class="color-btn" style="background:#00ff00" onclick="sendColor('#00ff00')"></button>
+    <button class="color-btn" style="background:#0000ff" onclick="sendColor('#0000ff')"></button>
+    <button class="color-btn" style="background:#ffff00" onclick="sendColor('#ffff00')"></button>
+    <button class="color-btn" style="background:#ffffff" onclick="sendColor('#ffffff')"></button>
+    <button class="color-btn" style="background:#ff00ff" onclick="sendColor('#ff00ff')"></button>
+  </div>
+</section>
+
+<!-- ================= CONTROL SECTION ================= -->
+<section>
+  <h3>⚙ Controls</h3>
+  <button onclick="sendPower(1)">🔆 ON</button>
+  <button onclick="sendPower(0)">🌑 OFF</button>
+  <button onclick="sendSpeed('up')">⚡ Speed +</button>
+  <button onclick="sendSpeed('down')">🐢 Speed −</button>
+  <br><br>
+  Brightness<br>
+  <input id="brightness" type="range" min="5" max="255" value="120"
+         onchange="sendBrightness(this.value)">
+</section>
+
+<!-- ================= ANIMATION SECTION ================= -->
+<section>
+<h3>✨ All Animations</h3>
+<div class="anim-grid" id="animGrid"></div>
+
+<br>
+<button style="background:#f59e0b;color:#000" onclick="sendAuto()">🤖 AUTO MODE</button>
+</section>
+
+<script>
+// ================= MQTT CONFIG =================
+const broker = "wss://e840d26e0bde4fb5a156ed3b3a492c17.s1.eu.hivemq.cloud:8884/mqtt";
+const topic  = "rudra/esp32/led";
+
+const client = mqtt.connect(broker,{
+  username:"esp32user",
+  password:"Rudradeb@2004"
+});
+
+let lastColor = "#ff0000";
+
+client.on("connect",()=>{
+  document.getElementById("status").innerText="Connected to MQTT ✅";
+});
+
+// ================= SEND FUNCTIONS =================
+function publish(obj){
+  client.publish(topic,JSON.stringify(obj));
+}
+
+function sendColor(color){
+  lastColor=color;
+  publish({ mode:"color", color:color });
+}
+
+function randomColor(){
+  let c="#"+Math.floor(Math.random()*16777215).toString(16).padStart(6,'0');
+  document.getElementById("colorPicker").value=c;
+  sendColor(c);
+}
+
+function sendAnim(index){
+  publish({
+    mode:"animation",
+    animation:index,
+    color:lastColor
+  });
+}
+
+function sendAuto(){
+  publish({
+    mode:"auto",
+    color:lastColor
+  });
+}
+
+function sendPower(v){
+  publish({ mode:"power", value:v });
+}
+
+function sendSpeed(v){
+  publish({ mode:"speed", value:v });
+}
+
+function sendBrightness(v){
+  publish({ mode:"brightness", value:v });
+}
+
+// ================= ANIMATION LIST =================
+const animations=[
+"Solid Color","Shooting Star","Color Chase","Theater Chase","Breathing",
+"Confetti","Sinelon","BPM","Juggle","Random Fill",
+"Rainbow Wave","Sparkle","Meteor","Center Blast","Dual Runner",
+"Color Pulse","Random Blocks","Fire","Scanner","Smooth Gradient",
+"Blink (50%)","Police Lights","Disco","i-threeBlockStoreAnimation",
+"Color Wipe Rev Inv","Block Step Fill","Block Step Fill Reverse"
+];
+
+const grid=document.getElementById("animGrid");
+
+animations.forEach((name,i)=>{
+  let btn=document.createElement("button");
+  btn.innerText=i+" : "+name;
+  btn.onclick=()=>sendAnim(i);
+  grid.appendChild(btn);
+});
+</script>
+
+</body>
+</html>
